@@ -20,7 +20,7 @@ along with Orca.  If not, see <http://www.gnu.org/licenses/>.
 package client
 
 import (
-	Logger "gatoor/orca/util/log"
+	Logger "bluewhale/orcahostd/logs"
 	"bluewhale/orcahostd/docker"
 	"fmt"
 	"math/rand"

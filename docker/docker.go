@@ -20,7 +20,7 @@ along with Orca.  If not, see <http://www.gnu.org/licenses/>.
 package docker
 
 import (
-	Logger "gatoor/orca/util/log"
+	Logger "bluewhale/orcahostd/logs"
 	DockerClient "github.com/fsouza/go-dockerclient"
 	"bytes"
 	"fmt"
