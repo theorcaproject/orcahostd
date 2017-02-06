@@ -20,7 +20,7 @@ package main
 
 
 import (
-	Logger "gatoor/orca/util/log"
+	Logger "bluewhale/orcahostd/logs"
 	"encoding/json"
 	"time"
 	"io/ioutil"
