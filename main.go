@@ -20,13 +20,13 @@ package main
 
 
 import (
-	Logger "bluewhale/orcahostd/logs"
+	Logger "orcahostd/logs"
 	"encoding/json"
 	"time"
 	"io/ioutil"
 	"bytes"
-	"bluewhale/orcahostd/client"
-	"bluewhale/orcahostd/model"
+	"orcahostd/client"
+	"orcahostd/model"
 	"net/http"
 	"flag"
 )

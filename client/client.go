@@ -20,11 +20,11 @@ along with Orca.  If not, see <http://www.gnu.org/licenses/>.
 package client
 
 import (
-	Logger "bluewhale/orcahostd/logs"
-	"bluewhale/orcahostd/docker"
+	Logger "orcahostd/logs"
+	"orcahostd/docker"
 	"fmt"
 	"math/rand"
-	"bluewhale/orcahostd/model"
+	"orcahostd/model"
 	"errors"
 )
 

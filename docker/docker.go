@@ -20,11 +20,11 @@ along with Orca.  If not, see <http://www.gnu.org/licenses/>.
 package docker
 
 import (
-	Logger "bluewhale/orcahostd/logs"
+	Logger "orcahostd/logs"
 	DockerClient "github.com/fsouza/go-dockerclient"
 	"bytes"
 	"fmt"
-	"bluewhale/orcahostd/model"
+	"orcahostd/model"
 )
 
 var DockerLogger = Logger.LoggerWithField(Logger.Logger, "module", "docker")
