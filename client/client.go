@@ -1,5 +1,5 @@
 /*
-Copyright Alex Mack
+Copyright Alex Mack and Michael Lawson
 This file is part of Orca.
 
 Orca is free software: you can redistribute it and/or modify
@@ -116,21 +116,6 @@ func (client *Client) DeleteApp(name string) bool {
 
 	return true;
 }
-
-
-//func generateCombinedMetrics() base.AppMetrics {
-//	combined := base.AppMetrics{}
-//	metrics := AppsMetricsById.All()
-//	ClientLogger.Infof("inner metrics %+v", metrics)
-//	for id, metricsbyTime := range metrics {
-//		app := AppsState.Get(id)
-//		for time, metrics := range metricsbyTime {
-//			combined.Add(app.Name, app.Version, time, base.AppStats{CpuUsage: metrics.CpuUsage, MemoryUsage: metrics.MemoryUsage, NetworkUsage: metrics.NetworkUsage, ResponsePerformance: metrics.ResponsePerformance})
-//		}
-//	}
-//	AppsMetricsById.Clear()
-//	return combined
-//}
 
 func (client *Client) GetAppMetrics() map[string]model.Metric {
 	ret := make(map[string]model.Metric)
