@@ -100,13 +100,14 @@ func (c *DockerContainerEngine) RunApp(appId string, name string, appConf model.
 		}
 	}
 
-	volumes := make(map[string]struct{})
-	volumes["/tmp/" + appId] = DockerClient.Volume{
-		Mountpoint:"/apptmp",
+	mounts := make([]DockerClient.Mount, 1)
+	mounts[0] = DockerClient.Mount{
+		Destination: "/apptmp",
+		Source:"/tmp/" + appId,
 	}
 
 	hostConfig := DockerClient.HostConfig{PortBindings: bindings, PublishAllPorts:true}
-	config := DockerClient.Config{AttachStdout: true, AttachStdin: true, Image: fmt.Sprintf("%s:%s", appConf.DockerConfig.Repository, appConf.DockerConfig.Tag), ExposedPorts:ports, Env:env, Volumes:volumes}
+	config := DockerClient.Config{AttachStdout: true, AttachStdin: true, Image: fmt.Sprintf("%s:%s", appConf.DockerConfig.Repository, appConf.DockerConfig.Tag), ExposedPorts:ports, Env:env, Volumes:mounts}
 	opts := DockerClient.CreateContainerOptions{Name: string(appId), Config: &config, HostConfig:&hostConfig}
 	container, containerErr := DockerCli().CreateContainer(opts)
 	if containerErr != nil {
