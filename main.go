@@ -53,10 +53,16 @@ func main() {
 
 func CallTrainer(trainerUri string, hostId string, client *client.Client) {
 	MainLogger.Infof("Calling Trainer...")
+	metrics := client.GetAppMetrics()
+	state := client.GetAppState()
+
+	for _, object := range state {
+		object.Application.Metrics = metrics[object.Name]
+	}
+
 	dataPackage := model.HostCheckinDataPackage{
-		State: client.GetAppState(),
+		State: state,
 		ChangesApplied: client.GetChangeLog(),
-		Metrics: client.GetAppMetrics(),
 	}
 
 	b := new(bytes.Buffer)

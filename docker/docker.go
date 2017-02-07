@@ -195,8 +195,8 @@ func parseDockerStats(stat0 *DockerClient.Stats, stat1 *DockerClient.Stats) mode
 	}
 
 	metric := model.Metric{}
-	metric.CpuUsage = cpuPercent
-	metric.MemoryUsage = (stat1.MemoryStats.Usage + stat0.MemoryStats.Usage) / 2
-	metric.NetworkUsage = (stat1.Network.RxBytes + stat0.Network.RxBytes) / 2
+	metric.CpuUsage = int64(cpuPercent)
+	metric.MemoryUsage = int64((stat1.MemoryStats.Usage + stat0.MemoryStats.Usage) / 2)
+	metric.NetworkUsage = int64((stat1.Network.RxBytes + stat0.Network.RxBytes) / 2)
 	return metric
 }
