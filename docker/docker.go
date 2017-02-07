@@ -94,7 +94,7 @@ func (c *DockerContainerEngine) RunApp(appId string, name string, appConf model.
 	os.Mkdir("/tmp/" + appId, 600)
 	for _, file := range appConf.Files {
 		fp, err := os.Create("/tmp/" + appId + file.HostPath)
-		if !err {
+		if err == nil {
 			fp.WriteString(file.Base64FileContents)
 			fp.Close()
 		}
