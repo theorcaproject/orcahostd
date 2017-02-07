@@ -107,7 +107,7 @@ func (c *DockerContainerEngine) RunApp(appId string, name string, appConf model.
 	}
 
 	hostConfig := DockerClient.HostConfig{PortBindings: bindings, PublishAllPorts:true}
-	config := DockerClient.Config{AttachStdout: true, AttachStdin: true, Image: fmt.Sprintf("%s:%s", appConf.DockerConfig.Repository, appConf.DockerConfig.Tag), ExposedPorts:ports, Env:env, Volumes:mounts}
+	config := DockerClient.Config{AttachStdout: true, AttachStdin: true, Image: fmt.Sprintf("%s:%s", appConf.DockerConfig.Repository, appConf.DockerConfig.Tag), ExposedPorts:ports, Env:env, Mounts:mounts}
 	opts := DockerClient.CreateContainerOptions{Name: string(appId), Config: &config, HostConfig:&hostConfig}
 	container, containerErr := DockerCli().CreateContainer(opts)
 	if containerErr != nil {
