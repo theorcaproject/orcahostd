@@ -25,6 +25,7 @@ import (
 	"bytes"
 	"fmt"
 	"orcahostd/model"
+	"os"
 )
 
 var DockerLogger = Logger.LoggerWithField(Logger.Logger, "module", "docker")
@@ -84,8 +85,28 @@ func (c *DockerContainerEngine) RunApp(appId string, name string, appConf model.
 	}
 	DockerLogger.Warnf("Bindinds are %+v", bindings)
 
+	env := DockerClient.Env{}
+	for _, item := range appConf.EnvironmentVariables{
+		env.Set(item.Key, item.Value)
+	}
+
+	/* Handle Files */
+	os.Mkdir("/tmp/" + appId, 600)
+	for _, file := range appConf.Files {
+		fp, err := os.Create("/tmp/" + appId + file.HostPath)
+		if !err {
+			fp.WriteString(file.Base64FileContents)
+			fp.Close()
+		}
+	}
+
+	volumes := make(map[string]struct{})
+	volumes["/tmp/" + appId] = DockerClient.Volume{
+		Mountpoint:"/apptmp",
+	}
+
 	hostConfig := DockerClient.HostConfig{PortBindings: bindings, PublishAllPorts:true}
-	config := DockerClient.Config{AttachStdout: true, AttachStdin: true, Image: fmt.Sprintf("%s:%s", appConf.DockerConfig.Repository, appConf.DockerConfig.Tag), ExposedPorts:ports}
+	config := DockerClient.Config{AttachStdout: true, AttachStdin: true, Image: fmt.Sprintf("%s:%s", appConf.DockerConfig.Repository, appConf.DockerConfig.Tag), ExposedPorts:ports, Env:env, Volumes:volumes}
 	opts := DockerClient.CreateContainerOptions{Name: string(appId), Config: &config, HostConfig:&hostConfig}
 	container, containerErr := DockerCli().CreateContainer(opts)
 	if containerErr != nil {
