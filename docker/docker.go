@@ -60,12 +60,18 @@ func DockerCli() *DockerClient.Client {
 func (c *DockerContainerEngine) InstallApp(name string, config model.VersionConfig) bool {
 	DockerLogger.Infof("Installing docker app %s", name)
 	var buf bytes.Buffer
+	authOpt := DockerClient.AuthConfiguration{
+		Username: config.DockerConfig.Username,
+		Password: config.DockerConfig.Password,
+		Email: config.DockerConfig.Email,
+		ServerAddress: config.DockerConfig.Server,
+	}
 	imageOpt := DockerClient.PullImageOptions{
 		Repository: config.DockerConfig.Repository,
 		Tag: config.DockerConfig.Tag,
 		OutputStream: &buf,
 	}
-	err := DockerCli().PullImage(imageOpt, DockerClient.AuthConfiguration{})
+	err := DockerCli().PullImage(imageOpt, authOpt)
 	if err != nil {
 		DockerLogger.Errorf("Install of app %s failed: %s", name, err)
 		return false
