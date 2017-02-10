@@ -49,6 +49,10 @@ type Change struct {
 }
 
 type DockerConfig struct {
+	Username   string
+	Password   string
+	Email      string
+	Server     string
 	Tag        string
 	Repository string
 	Reference  string
