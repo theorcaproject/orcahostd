@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"orcahostd/model"
 	"os"
+	"errors"
 )
 
 var DockerLogger = Logger.LoggerWithField(Logger.Logger, "module", "docker")
@@ -154,7 +155,7 @@ func (c *DockerContainerEngine) StopApp(appId string) bool {
 	return true
 }
 
-func (c *DockerContainerEngine) AppMetrics(appId string) model.Metric {
+func (c *DockerContainerEngine) AppMetrics(appId string) (model.Metric, error) {
 	DockerLogger.Debugf("Getting AppMetrics for app %s %s:%d", appId)
 	errC := make(chan error, 1)
 	statsC := make(chan *DockerClient.Stats)
@@ -175,15 +176,15 @@ func (c *DockerContainerEngine) AppMetrics(appId string) model.Metric {
 		}
 		resultStats = append(resultStats, stats)
 	}
-	//err := <-errC
-	//if (err != nil){
-	//	DockerLogger.Infof("Getting AppMetrics for app %s %s:%d failed: %s. Only %d results", appId, appConf.Name, appConf.Version, err, len(resultStats))
-	//	return false
-	//}
+
 	return parseDockerStats(resultStats[0], resultStats[1])
 }
 
-func parseDockerStats(stat0 *DockerClient.Stats, stat1 *DockerClient.Stats) model.Metric {
+func parseDockerStats(stat0 *DockerClient.Stats, stat1 *DockerClient.Stats) (model.Metric, error) {
+	if stat0 == nil || stat1 == nil {
+		return model.Metric{}, errors.New("Could not collect metrics")
+	}
+
 	var (
 		cpuPercent = uint64(0)
 		cpuDelta = float64(stat1.CPUStats.CPUUsage.TotalUsage) - float64(stat0.CPUStats.CPUUsage.TotalUsage)
@@ -198,5 +199,5 @@ func parseDockerStats(stat0 *DockerClient.Stats, stat1 *DockerClient.Stats) mode
 	metric.CpuUsage = int64(cpuPercent)
 	metric.MemoryUsage = int64((stat1.MemoryStats.Usage + stat0.MemoryStats.Usage) / 2)
 	metric.NetworkUsage = int64((stat1.Network.RxBytes + stat0.Network.RxBytes) / 2)
-	return metric
+	return metric, nil
 }

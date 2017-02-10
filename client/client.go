@@ -121,7 +121,8 @@ func (client *Client) DeleteApp(name string) bool {
 func (client *Client) GetAppMetrics() map[string]model.Metric {
 	ret := make(map[string]model.Metric)
 	for _, application := range client.AppState {
-		ret[application.Name] = client.engine.AppMetrics(application.DockerAppId)
+		metric, _ := client.engine.AppMetrics(application.DockerAppId)
+		ret[application.Name] = metric
 	}
 	return ret
 }
