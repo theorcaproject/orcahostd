@@ -38,7 +38,7 @@ type DockerContainerEngine struct {
 
 func (c *DockerContainerEngine) Init() {
 	var err error
-	dockerCli, err = DockerClient.NewClient("/var/run/docker.sock")
+	dockerCli, err = DockerClient.NewClient("unix:///var/run/docker.sock")
 
 	if err != nil {
 		DockerLogger.Fatalf("Docker client could not be instantiated: %v", err)
@@ -49,7 +49,7 @@ func DockerCli() *DockerClient.Client {
 	if dockerCli == nil {
 		DockerLogger.Infof("DockerClient was nil, instantiating again.")
 		var err error
-		dockerCli, err = DockerClient.NewClient("/var/run/docker.sock")
+		dockerCli, err = DockerClient.NewClient("unix:///var/run/docker.sock")
 
 		if err != nil {
 			DockerLogger.Fatalf("Docker client could not be instantiated: %v", err)
