@@ -183,6 +183,10 @@ func (c *DockerContainerEngine) AppMetrics(appId string) (model.Metric, error) {
 		resultStats = append(resultStats, stats)
 	}
 
+	if len(resultStats) != 2 {
+		return model.Metric{}, errors.New("Could not collect metrics, there were no stats")
+	}
+
 	return parseDockerStats(resultStats[0], resultStats[1])
 }
 
