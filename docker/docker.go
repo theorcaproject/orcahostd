@@ -30,33 +30,31 @@ import (
 )
 
 var DockerLogger = Logger.LoggerWithField(Logger.Logger, "module", "docker")
-var dockerCli *DockerClient.Client
 
 type DockerContainerEngine struct {
-
+	dockerCli *DockerClient.Client
 }
 
 func (c *DockerContainerEngine) Init() {
 	var err error
-	dockerCli, err = DockerClient.NewClient("unix:///var/run/docker.sock")
-
+	c.dockerCli, err = DockerClient.NewClient("unix:///var/run/docker.sock")
 	if err != nil {
 		DockerLogger.Fatalf("Docker client could not be instantiated: %v", err)
 	}
 }
 
-func DockerCli() *DockerClient.Client {
-	if dockerCli == nil {
-		DockerLogger.Infof("DockerClient was nil, instantiating again.")
-		var err error
-		dockerCli, err = DockerClient.NewClient("unix:///var/run/docker.sock")
-
-		if err != nil {
-			DockerLogger.Fatalf("Docker client could not be instantiated: %v", err)
-		}
-	}
-	return dockerCli
-}
+//func DockerCli() *DockerClient.Client {
+//	if c.dockerCli == nil {
+//		DockerLogger.Infof("DockerClient was nil, instantiating again.")
+//		var err error
+//		c.dockerCli, err = DockerClient.NewClient("unix:///var/run/docker.sock")
+//
+//		if err != nil {
+//			DockerLogger.Fatalf("Docker client could not be instantiated: %v", err)
+//		}
+//	}
+//	return dockerCli
+//}
 
 func (c *DockerContainerEngine) InstallApp(name string, config model.VersionConfig) bool {
 	DockerLogger.Infof("Installing docker app %s", name)
@@ -72,7 +70,7 @@ func (c *DockerContainerEngine) InstallApp(name string, config model.VersionConf
 		Tag: config.DockerConfig.Tag,
 		OutputStream: &buf,
 	}
-	err := DockerCli().PullImage(imageOpt, authOpt)
+	err := c.dockerCli.PullImage(imageOpt, authOpt)
 	if err != nil {
 		DockerLogger.Errorf("Install of app %s failed: %s", name, err)
 		return false
@@ -113,13 +111,13 @@ func (c *DockerContainerEngine) RunApp(appId string, name string, appConf model.
 	hostConfig := DockerClient.HostConfig{PortBindings: bindings, PublishAllPorts:true, Binds:mounts}
 	config := DockerClient.Config{AttachStdout: true, AttachStdin: true, Image: fmt.Sprintf("%s:%s", appConf.DockerConfig.Repository, appConf.DockerConfig.Tag), ExposedPorts:ports, Env:env,}
 	opts := DockerClient.CreateContainerOptions{Name: string(appId), Config: &config, HostConfig:&hostConfig}
-	container, containerErr := DockerCli().CreateContainer(opts)
+	container, containerErr :=c.dockerCli.CreateContainer(opts)
 	if containerErr != nil {
 		DockerLogger.Errorf("Running docker app %s with error %s", appId, containerErr)
 		return false
 	}
 
-	err := DockerCli().StartContainer(container.ID, &hostConfig)
+	err := c.dockerCli.StartContainer(container.ID, &hostConfig)
 	if err != nil {
 		DockerLogger.Errorf("Running docker app %s with error %s", appId, err)
 		return false
@@ -131,7 +129,7 @@ func (c *DockerContainerEngine) RunApp(appId string, name string, appConf model.
 
 func (c *DockerContainerEngine) QueryApp(appId string) bool {
 	DockerLogger.Debugf("Query docker app %s", appId)
-	resp, err := DockerCli().InspectContainer(string(appId))
+	resp, err := c.dockerCli.InspectContainer(string(appId))
 	if err != nil {
 		DockerLogger.Debugf("Query docker app %s failed: %s", appId, err)
 		return false
@@ -142,14 +140,14 @@ func (c *DockerContainerEngine) QueryApp(appId string) bool {
 
 func (c *DockerContainerEngine) StopApp(appId string) bool {
 	DockerLogger.Infof("Stopping docker app %s", appId)
-	err := DockerCli().StopContainer(fmt.Sprintf("%s", appId), 0)
+	err := c.dockerCli.StopContainer(fmt.Sprintf("%s", appId), 0)
 	fail := false
 	if err != nil {
 		DockerLogger.Infof("Stopping docker app %s - failed: %s", appId, err)
 		fail = true
 	}
 	opts := DockerClient.RemoveContainerOptions{ID: string(appId)}
-	err = DockerCli().RemoveContainer(opts)
+	err = c.dockerCli.RemoveContainer(opts)
 	if err != nil {
 		DockerLogger.Infof("Stopping docker app %s - %s", appId, err)
 		fail = true
@@ -168,7 +166,7 @@ func (c *DockerContainerEngine) AppMetrics(appId string) (model.Metric, error) {
 	done := make(chan bool)
 
 	go func() {
-		errC <- DockerCli().Stats(DockerClient.StatsOptions{ID: string(appId), Stats: statsC, Stream: true, Done: done})
+		errC <- c.dockerCli.Stats(DockerClient.StatsOptions{ID: string(appId), Stats: statsC, Stream: true, Done: done})
 		close(errC)
 	}()
 	var resultStats []*DockerClient.Stats
