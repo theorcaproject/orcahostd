@@ -165,6 +165,8 @@ func (c *DockerContainerEngine) AppMetrics(appId string) (model.Metric, error) {
 	statsC := make(chan *DockerClient.Stats)
 	done := make(chan bool)
 
+	defer close(errC)
+	defer close(done)
 	go func() {
 		errC <- c.dockerCli.Stats(DockerClient.StatsOptions{ID: string(appId), Stats: statsC, Stream: true, Done: done})
 		close(errC)
