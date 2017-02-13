@@ -39,6 +39,8 @@ type DockerContainerEngine struct {
 }
 
 func (c *DockerContainerEngine) Init() {
+	c.metrics = make(map[string]*DockerMetrics)
+
 	var err error
 	c.dockerCli, err = DockerClient.NewClient("unix:///var/run/docker.sock")
 	if err != nil {
