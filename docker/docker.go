@@ -207,6 +207,7 @@ func (c *DockerContainerEngine) AppMetrics(appId string) (model.Metric, error) {
 	return parseDockerStats(resultStats[0], resultStats[1])
 }
 
+
 func parseDockerStats(stat0 *DockerClient.Stats, stat1 *DockerClient.Stats) (model.Metric, error) {
 	if stat0 == nil || stat1 == nil {
 		return model.Metric{}, errors.New("Could not collect metrics")
