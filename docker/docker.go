@@ -29,10 +29,13 @@ import (
 	"errors"
 )
 
+
 var DockerLogger = Logger.LoggerWithField(Logger.Logger, "module", "docker")
 
 type DockerContainerEngine struct {
 	dockerCli *DockerClient.Client
+
+	metrics map[string]DockerMetrics
 }
 
 func (c *DockerContainerEngine) Init() {
@@ -159,25 +162,39 @@ func (c *DockerContainerEngine) StopApp(appId string) bool {
 	return true
 }
 
+type DockerMetrics struct {
+	errC chan error
+	statsC chan *DockerClient.Stats
+	done chan bool
+}
+
+
 func (c *DockerContainerEngine) AppMetrics(appId string) (model.Metric, error) {
 	DockerLogger.Debugf("Getting AppMetrics for app %s %s:%d", appId)
-	errC := make(chan error, 1)
-	statsC := make(chan *DockerClient.Stats)
-	done := make(chan bool)
 
-	defer close(errC)
-	defer close(done)
-	go func() {
-		errC <- c.dockerCli.Stats(DockerClient.StatsOptions{ID: string(appId), Stats: statsC, Stream: true, Done: done})
-		close(errC)
-	}()
+	if _, ok := c.metrics[appId] !ok {
+		metricsItem := &DockerMetrics{
+			done: make (chan bool),
+			errC: make (chan error),
+			statsC: make (chan *DockerClient.Stats),
+		}
+		c.metrics[appId] = metricsItem
+
+		DockerLogger.Debugf("Creating DockerMetrics Entity for app %s", appId)
+		go func() {
+			c.dockerCli.Stats(DockerClient.StatsOptions{ID: string(appId), Stats: metricsItem.statsC, Stream: true, Done: metricsItem.done})
+			close(metricsItem.errC)
+		}()
+	}
+
+	entry := c.metrics[appId]
+
 	var resultStats []*DockerClient.Stats
 	count := 0
 	for {
 		count++
-		stats, ok := <-statsC
+		stats, ok := <-entry.statsC
 		if !ok || count > 2 {
-			close(done)
 			break
 		}
 		resultStats = append(resultStats, stats)
