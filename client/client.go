@@ -127,6 +127,10 @@ func (client *Client) GetAppMetrics() map[string]model.Metric {
 	return ret
 }
 
+func (client *Client) GetHostMetrics() model.Metric{
+	return client.engine.HostMetrics()
+}
+
 func (client *Client) GetAppState() []*model.ApplicationState{
 	// We need to update the AppState before returning it:
 	for _, state := range client.AppState {
