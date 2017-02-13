@@ -35,7 +35,7 @@ var DockerLogger = Logger.LoggerWithField(Logger.Logger, "module", "docker")
 type DockerContainerEngine struct {
 	dockerCli *DockerClient.Client
 
-	metrics map[string]DockerMetrics
+	metrics map[string]*DockerMetrics
 }
 
 func (c *DockerContainerEngine) Init() {
@@ -172,7 +172,7 @@ type DockerMetrics struct {
 func (c *DockerContainerEngine) AppMetrics(appId string) (model.Metric, error) {
 	DockerLogger.Debugf("Getting AppMetrics for app %s %s:%d", appId)
 
-	if _, ok := c.metrics[appId] !ok {
+	if _, ok := c.metrics[appId]; !ok {
 		metricsItem := &DockerMetrics{
 			done: make (chan bool),
 			errC: make (chan error),
