@@ -26,6 +26,12 @@ import (
 	"math/rand"
 	"orcahostd/model"
 	"errors"
+	"time"
+	"net/http"
+	"io/ioutil"
+	"encoding/json"
+	"net"
+	"orca/trainer/state"
 )
 
 var ClientLogger = Logger.LoggerWithField(Logger.Logger, "module", "client")
@@ -33,6 +39,7 @@ var cli Client
 
 type Client struct {
 	AppState []*model.ApplicationState
+	AppConfiguration map[string]model.VersionConfig
 	Changes map[string]bool
 
 	engine docker.DockerContainerEngine
@@ -78,6 +85,25 @@ func GenerateId(app string) string {
 	return string(fmt.Sprintf("%s_%d", app, rand.Int31()))
 }
 
+func (client *Client) RunCheck(config model.VersionConfig) bool {
+	for _, change := range config.Checks {
+		if change.Type == "http" {
+			res, err := http.Get(change.Uri)
+			if err != nil || res.StatusCode != 200{
+				return false
+			}
+
+		}else if change.Type == "tcp"{
+			_, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", change.Port))
+			if err != nil {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
 func (client *Client) DeployApp(name string, config model.VersionConfig) bool {
 	ClientLogger.Infof("Installing app %s:%d", name, config.Version)
 	client.engine.InstallApp(name, config)
@@ -96,12 +122,28 @@ func (client *Client) DeployApp(name string, config model.VersionConfig) bool {
 	}
 
 	client.AppState = append(client.AppState, newAppState)
+	/* Add the configuration for this application */
+	client.AppConfiguration[name] = config
 	res := client.engine.RunApp(id, name, config)
 	if !res {
-		newAppState.Application.State = "failed"
+		newAppState.Application.State = "installation_failed"
 	}else{
-		newAppState.Application.State = "running"
+		for i := 1; i <= 10; i++ {
+			if !client.RunCheck(config) {
+				if i == 10 {
+					newAppState.Application.State = "checks_failed"
+					break
+				}
+
+				time.Sleep(time.Duration(6 * time.Second))
+				continue
+			} else {
+				newAppState.Application.State = "running"
+				break
+			}
+		}
 	}
+
 	ClientLogger.Infof("Starting app %s:%d done. Success=%t", name, config.Version, res)
 	return res
 }
@@ -131,7 +173,13 @@ func (client *Client) GetAppState() []*model.ApplicationState{
 	// We need to update the AppState before returning it:
 	for _, state := range client.AppState {
 		if client.engine.QueryApp(state.DockerAppId) {
-			state.Application.State = "running"
+			appConfiguration := client.AppConfiguration[state.Name]
+
+			if !client.RunCheck(appConfiguration) {
+				state.Application.State = "checks_failed"
+			}else{
+				state.Application.State = "running"
+			}
 		}else{
 			state.Application.State = "failed"
 		}

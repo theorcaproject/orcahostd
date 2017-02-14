@@ -78,6 +78,13 @@ type EnvironmentVariable struct {
 	Value string
 }
 
+type ApplicationChecks struct {
+	Type string /* Either HTTP or TCP */
+
+	Port int64
+	Uri  string
+}
+
 type VersionConfig struct {
 	DockerConfig	     DockerConfig
 	PortMappings         []PortMapping
@@ -85,6 +92,7 @@ type VersionConfig struct {
 	EnvironmentVariables []EnvironmentVariable
 	Files                []File
 	Version 	     string
+	Checks               []ApplicationChecks
 }
 
 type Metric struct {
