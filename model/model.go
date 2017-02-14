@@ -99,4 +99,6 @@ type Metric struct {
 	CpuUsage int64
 	MemoryUsage int64
 	NetworkUsage int64
+	HardDiskUsage int64
+	HardDiskUsagePercent int64
 }

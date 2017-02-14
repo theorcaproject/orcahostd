@@ -27,6 +27,9 @@ import (
 	"orcahostd/model"
 	"os"
 	"errors"
+	"github.com/shirou/gopsutil/mem"
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/disk"
 )
 
 
@@ -170,6 +173,25 @@ type DockerMetrics struct {
 	done chan bool
 }
 
+
+func (eng *DockerContainerEngine) HostMetrics() model.Metric {
+	m, mErr := mem.VirtualMemory()
+	c, cErr := cpu.Percent(0, true)
+	d, dErr := disk.Usage("/")
+
+	model := model.Metric{}
+	if mErr == nil {
+		model.MemoryUsage = int64(m.Used)
+	}
+	if cErr == nil && len(c) == 1 {
+		model.CpuUsage = int64(c[0] * 100.0)
+	}
+	if dErr == nil {
+		model.HardDiskUsage = int64(d.Used)
+		model.HardDiskUsagePercent = int64(d.UsedPercent * 100.0)
+	}
+	return model
+}
 
 func (c *DockerContainerEngine) AppMetrics(appId string) (model.Metric, error) {
 	DockerLogger.Debugf("Getting AppMetrics for app %s %s:%d", appId)
