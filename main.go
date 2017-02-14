@@ -110,7 +110,7 @@ func SendLogs(trainerUri string, hostId string, client *client.Client) {
 		return
 	}
 
-	res, err := http.Post(trainerUri + "/log?host=" + hostId, "application/json; charset=utf-8", b)
+	res, err := http.Post(trainerUri + "/log/apps?host=" + hostId, "application/json; charset=utf-8", b)
 	if err != nil {
 		MainLogger.Errorf("Could not send logs to trainer: %+v", err)
 	} else {
