@@ -253,8 +253,8 @@ func (engine *DockerContainerEngine) AppLogs(appId string) (string, string) {
 
 	logs := engine.logs[appId]
 	outLogs := logs.StdOut.String()
-	logs.StdOut.Reset()
 	errLogs := logs.StdErr.String()
+	logs.StdOut.Reset()
 	logs.StdErr.Reset()
 	return outLogs, errLogs
 }
