@@ -42,6 +42,11 @@ type Client struct {
 	engine docker.DockerContainerEngine
 }
 
+type Logs struct {
+	StdOut string
+	StdErr string
+}
+
 func (client *Client) Init() {
 	ClientLogger.Info("Initializing Client...")
 	client.AppState = make([]*model.ApplicationState, 0)
@@ -163,6 +168,15 @@ func (client *Client) GetAppMetrics() map[string]model.Metric {
 	for _, application := range client.AppState {
 		metric, _ := client.engine.AppMetrics(application.DockerAppId)
 		ret[application.Name] = metric
+	}
+	return ret
+}
+
+func (client *Client) GetAppLogs() map[string]Logs {
+	ret := make(map[string]Logs)
+	for _, application := range client.AppState {
+		out, err := client.engine.AppLogs(application.DockerAppId)
+		ret[application.Name] = Logs{ StdOut: out, StdErr:err}
 	}
 	return ret
 }

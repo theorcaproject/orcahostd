@@ -42,6 +42,14 @@ func main() {
 	client := client.Client{}
 	client.Init()
 
+
+	logsTicker := time.NewTicker(time.Duration(10 * time.Second))
+	go func () {
+		for {
+			<- logsTicker.C
+			SendLogs((*trainerUri), (*hostId), &client)
+		}
+	}()
 	trainerTicker := time.NewTicker(time.Duration((*checkInInterval)) * time.Second)
 	func () {
 		for {
@@ -93,3 +101,19 @@ func CallTrainer(trainerUri string, hostId string, client *client.Client) {
 	}
 }
 
+func SendLogs(trainerUri string, hostId string, client *client.Client) {
+	logs := client.GetAppLogs()
+	b := new(bytes.Buffer)
+	jsonErr := json.NewEncoder(b).Encode(logs)
+	if jsonErr != nil {
+		MainLogger.Errorf("Could not encode Logs: %+v.", jsonErr)
+		return
+	}
+
+	res, err := http.Post(trainerUri + "/log/apps?host=" + hostId, "application/json; charset=utf-8", b)
+	if err != nil {
+		MainLogger.Errorf("Could not send logs to trainer: %+v", err)
+	} else {
+		defer res.Body.Close()
+	}
+}
