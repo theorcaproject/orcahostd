@@ -35,14 +35,21 @@ import (
 
 var DockerLogger = Logger.LoggerWithField(Logger.Logger, "module", "docker")
 
+type LogItem struct{
+	StdOut *bytes.Buffer
+	StdErr *bytes.Buffer
+}
+
 type DockerContainerEngine struct {
 	dockerCli *DockerClient.Client
 
 	metrics map[string]*DockerMetrics
+	logs map[string]*LogItem
 }
 
 func (c *DockerContainerEngine) Init() {
 	c.metrics = make(map[string]*DockerMetrics)
+	c.logs = make(map[string]*LogItem)
 
 	var err error
 	c.dockerCli, err = DockerClient.NewClient("unix:///var/run/docker.sock")
@@ -231,6 +238,26 @@ func (c *DockerContainerEngine) AppMetrics(appId string) (model.Metric, error) {
 	return parseDockerStats(resultStats[0], resultStats[1])
 }
 
+func (engine *DockerContainerEngine) AppLogs(appId string) (string, string) {
+	if _, ok := engine.logs[appId]; !ok {
+		fmt.Println(fmt.Sprintf("starting logs for %s", appId))
+		engine.logs[appId] = &LogItem{
+			StdOut: new(bytes.Buffer),
+			StdErr: new(bytes.Buffer),
+		}
+		logs := engine.logs[appId]
+		go func() {
+			engine.dockerCli.Logs(DockerClient.LogsOptions{Container: string(appId), OutputStream: logs.StdOut, ErrorStream: logs.StdErr, Stderr: true, Stdout: true})
+		}()
+	}
+
+	logs := engine.logs[appId]
+	outLogs := logs.StdOut.String()
+	logs.StdOut.Reset()
+	errLogs := logs.StdErr.String()
+	logs.StdErr.Reset()
+	return outLogs, errLogs
+}
 
 func parseDockerStats(stat0 *DockerClient.Stats, stat1 *DockerClient.Stats) (model.Metric, error) {
 	if stat0 == nil || stat1 == nil {
