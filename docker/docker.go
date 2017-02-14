@@ -124,7 +124,7 @@ func (c *DockerContainerEngine) RunApp(appId string, name string, appConf model.
 	mounts[0] = "/tmp/" + appId + ":/orcatmp"
 
 	hostConfig := DockerClient.HostConfig{PortBindings: bindings, PublishAllPorts:true, Binds:mounts}
-	config := DockerClient.Config{AttachStdout: false, AttachStdin: true, Image: fmt.Sprintf("%s:%s", appConf.DockerConfig.Repository, appConf.DockerConfig.Tag), ExposedPorts:ports, Env:env,}
+	config := DockerClient.Config{AttachStdout: true, AttachStdin: true, Image: fmt.Sprintf("%s:%s", appConf.DockerConfig.Repository, appConf.DockerConfig.Tag), ExposedPorts:ports, Env:env,}
 	opts := DockerClient.CreateContainerOptions{Name: string(appId), Config: &config, HostConfig:&hostConfig}
 	container, containerErr :=c.dockerCli.CreateContainer(opts)
 	if containerErr != nil {
@@ -247,7 +247,7 @@ func (engine *DockerContainerEngine) AppLogs(appId string) (string, string) {
 		}
 		logs := engine.logs[appId]
 		go func() {
-			engine.dockerCli.Logs(DockerClient.LogsOptions{Container: string(appId), OutputStream: logs.StdOut, ErrorStream: logs.StdErr, Stderr: true, Stdout: true})
+			engine.dockerCli.Logs(DockerClient.LogsOptions{Container: string(appId), OutputStream: logs.StdOut, ErrorStream: logs.StdErr, Stderr: true, Stdout: true, Follow: true})
 		}()
 	}
 
