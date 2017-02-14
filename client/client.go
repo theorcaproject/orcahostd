@@ -46,6 +46,7 @@ func (client *Client) Init() {
 	ClientLogger.Info("Initializing Client...")
 	client.AppState = make([]*model.ApplicationState, 0)
 	client.Changes = make(map[string]bool)
+	client.AppConfiguration = make(map[string]model.VersionConfig)
 
 	client.engine = docker.DockerContainerEngine{}
 	client.engine.Init()
