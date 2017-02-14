@@ -195,7 +195,7 @@ func (eng *DockerContainerEngine) HostMetrics() model.Metric {
 	}
 	if dErr == nil {
 		model.HardDiskUsage = int64(d.Used)
-		model.HardDiskUsagePercent = int64(d.UsedPercent * 100.0)
+		model.HardDiskUsagePercent = int64(d.UsedPercent)
 	}
 	return model
 }
