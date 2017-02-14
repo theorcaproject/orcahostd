@@ -80,9 +80,7 @@ type EnvironmentVariable struct {
 
 type ApplicationChecks struct {
 	Type string /* Either HTTP or TCP */
-
-	Port int64
-	Uri  string
+	Goal  string /* Either a port or uri */
 }
 
 type VersionConfig struct {

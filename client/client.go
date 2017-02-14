@@ -28,10 +28,7 @@ import (
 	"errors"
 	"time"
 	"net/http"
-	"io/ioutil"
-	"encoding/json"
 	"net"
-	"orca/trainer/state"
 )
 
 var ClientLogger = Logger.LoggerWithField(Logger.Logger, "module", "client")
@@ -88,13 +85,13 @@ func GenerateId(app string) string {
 func (client *Client) RunCheck(config model.VersionConfig) bool {
 	for _, change := range config.Checks {
 		if change.Type == "http" {
-			res, err := http.Get(change.Uri)
+			res, err := http.Get(change.Goal)
 			if err != nil || res.StatusCode != 200{
 				return false
 			}
 
 		}else if change.Type == "tcp"{
-			_, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", change.Port))
+			_, err := net.Dial("tcp", change.Goal)
 			if err != nil {
 				return false
 			}
