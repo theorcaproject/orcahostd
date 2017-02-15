@@ -30,6 +30,7 @@ import (
 	"github.com/shirou/gopsutil/mem"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
+	"time"
 )
 
 
@@ -183,7 +184,7 @@ type DockerMetrics struct {
 
 func (eng *DockerContainerEngine) HostMetrics() model.Metric {
 	m, mErr := mem.VirtualMemory()
-	c, cErr := cpu.Percent(0, true)
+	c, cErr := cpu.Percent(time.Second * 1, false)
 	d, dErr := disk.Usage("/")
 
 	model := model.Metric{}
@@ -195,7 +196,7 @@ func (eng *DockerContainerEngine) HostMetrics() model.Metric {
 	}
 	if dErr == nil {
 		model.HardDiskUsage = int64(d.Used)
-		model.HardDiskUsagePercent = int64(d.UsedPercent * 100.0)
+		model.HardDiskUsagePercent = int64(d.UsedPercent)
 	}
 	return model
 }
@@ -247,14 +248,14 @@ func (engine *DockerContainerEngine) AppLogs(appId string) (string, string) {
 		}
 		logs := engine.logs[appId]
 		go func() {
-			engine.dockerCli.Logs(DockerClient.LogsOptions{Container: string(appId), OutputStream: logs.StdOut, ErrorStream: logs.StdErr, Stderr: true, Stdout: true})
+			engine.dockerCli.Logs(DockerClient.LogsOptions{Container: string(appId), OutputStream: logs.StdOut, ErrorStream: logs.StdErr, Stderr: true, Stdout: true, Follow: true})
 		}()
 	}
 
 	logs := engine.logs[appId]
 	outLogs := logs.StdOut.String()
-	logs.StdOut.Reset()
 	errLogs := logs.StdErr.String()
+	logs.StdOut.Reset()
 	logs.StdErr.Reset()
 	return outLogs, errLogs
 }
