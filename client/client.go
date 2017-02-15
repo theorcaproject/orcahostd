@@ -97,10 +97,12 @@ func (client *Client) RunCheck(config model.VersionConfig) bool {
 			}
 
 		}else if change.Type == "tcp"{
-			_, err := net.Dial("tcp", change.Goal)
+			socket, err := net.Dial("tcp", change.Goal)
 			if err != nil {
 				return false
 			}
+
+			socket.Close()
 		}
 	}
 
