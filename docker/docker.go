@@ -30,6 +30,7 @@ import (
 	"github.com/shirou/gopsutil/mem"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
+	"time"
 )
 
 
@@ -183,7 +184,7 @@ type DockerMetrics struct {
 
 func (eng *DockerContainerEngine) HostMetrics() model.Metric {
 	m, mErr := mem.VirtualMemory()
-	c, cErr := cpu.Percent(0, true)
+	c, cErr := cpu.Percent(time.Second * 1, false)
 	d, dErr := disk.Usage("/")
 
 	model := model.Metric{}
