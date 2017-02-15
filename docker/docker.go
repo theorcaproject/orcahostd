@@ -196,7 +196,7 @@ func (eng *DockerContainerEngine) HostMetrics() model.Metric {
 	}
 	if dErr == nil {
 		model.HardDiskUsage = int64(d.Used)
-		model.HardDiskUsagePercent = int64(d.UsedPercent)
+		model.HardDiskUsagePercent = int64(d.UsedPercent * 100.0)
 	}
 	return model
 }
@@ -272,7 +272,7 @@ func parseDockerStats(stat0 *DockerClient.Stats, stat1 *DockerClient.Stats) (mod
 	)
 
 	if systemDelta > 0.0 && cpuDelta > 0.0 {
-		cpuPercent = uint64((cpuDelta / systemDelta) * float64(len(stat1.CPUStats.CPUUsage.PercpuUsage)) * 100.0)
+		cpuPercent = uint64((cpuDelta / systemDelta) * float64(len(stat1.CPUStats.CPUUsage.PercpuUsage)) * 10000.0)
 	}
 
 	metric := model.Metric{}
