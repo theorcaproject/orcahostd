@@ -92,17 +92,21 @@ func (client *Client) RunCheck(config model.VersionConfig) bool {
 	for _, change := range config.Checks {
 		if change.Type == "http" {
 			res, err := http.Get(change.Goal)
+			if err != nil {
+				return false
+			}
+
 			defer res.Body.Close()
-			if err != nil || res.StatusCode != 200{
+			if res.StatusCode != 200 {
 				return false
 			}
 
 		}else if change.Type == "tcp"{
 			socket, err := net.Dial("tcp", change.Goal)
-			defer socket.Close()
 			if err != nil {
 				return false
 			}
+			socket.Close()
 		}
 	}
 
