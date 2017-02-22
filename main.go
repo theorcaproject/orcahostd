@@ -94,7 +94,12 @@ func CallTrainer(trainerUri string, hostId string, client *client.Client) {
 			if err := json.Unmarshal(body, &changes); err != nil {
 				MainLogger.Errorf("Failed to parse response - %s HTTP_BODY: %s", err, string(body))
 			} else {
-				client.HandleRequestedChanges(changes)
+
+				/* This seems a bit funny, but since we are only dealing with one change at a time this
+				speeds things up. */
+				if client.HandleRequestedChanges(changes) {
+					CallTrainer(trainerUri, hostId, client)
+				}
 			}
 		}
 	}

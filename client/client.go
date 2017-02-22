@@ -57,7 +57,7 @@ func (client *Client) Init() {
 	client.engine.Init()
 }
 
-func (client *Client) HandleRequestedChanges(changes []model.Change) {
+func (client *Client) HandleRequestedChanges(changes []model.Change) bool {
 	for _, change := range changes {
 		/* First check that we have not already dealth with this change */
 		if _, ok := client.Changes[change.Id]; ok {
@@ -73,7 +73,7 @@ func (client *Client) HandleRequestedChanges(changes []model.Change) {
 
 			if client.DeployApp(change.Name, change.AppConfig) {
 				client.Changes[change.Id] = true
-				break
+				return true
 			}
 		}
 
@@ -83,6 +83,8 @@ func (client *Client) HandleRequestedChanges(changes []model.Change) {
 			}
 		}
 	}
+
+	return false
 }
 
 func GenerateId(app string) string {
