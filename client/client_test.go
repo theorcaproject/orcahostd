@@ -5,14 +5,16 @@ import (
 import (
 	"testing"
 	"time"
+	"net/http"
 )
 
 func TestPlan__Plan_HostWithFailedAppsAndErrors_Terminated(t *testing.T){
-	client := Client{}
-	client.Init()
-
 	for {
-		client.GetAppState()
-		time.Sleep(1)
+		_, err := http.Get("http://mirror.sphirewall.net")
+		if err != nil {
+			// handle error
+		}
+		time.Sleep(2 * time.Second)
 	}
+
 }

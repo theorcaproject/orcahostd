@@ -73,6 +73,7 @@ func (client *Client) HandleRequestedChanges(changes []model.Change) {
 
 			if client.DeployApp(change.Name, change.AppConfig) {
 				client.Changes[change.Id] = true
+				break
 			}
 		}
 

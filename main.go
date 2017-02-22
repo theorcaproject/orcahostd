@@ -42,7 +42,6 @@ func main() {
 	client := client.Client{}
 	client.Init()
 
-
 	logsTicker := time.NewTicker(time.Duration(10 * time.Second))
 	go func () {
 		for {
