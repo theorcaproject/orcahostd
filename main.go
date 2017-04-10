@@ -18,41 +18,59 @@ along with Orca.  If not, see <http://www.gnu.org/licenses/>.
 
 package main
 
-
 import (
-	Logger "orcahostd/logs"
-	"encoding/json"
-	"time"
-	"io/ioutil"
 	"bytes"
-	"orcahostd/client"
-	"orcahostd/model"
-	"net/http"
+	"encoding/json"
 	"flag"
+	"io/ioutil"
+	"net/http"
+	"orcahostd/client"
+	"orcahostd/logreceiver"
+	Logger "orcahostd/logs"
+	"orcahostd/model"
+	"time"
 )
 
 var MainLogger = Logger.LoggerWithField(Logger.Logger, "module", "main")
+
+type LogSender interface {
+	PushLogs(logs map[string]client.Logs)
+}
 
 func main() {
 	var hostId = flag.String("hostid", "host1", "Host Identifier")
 	var checkInInterval = flag.Int("interval", 60, "Check in interval")
 	var trainerUri = flag.String("traineruri", "http://localhost:5001", "Trainer Uri")
+	var elkUri = flag.String("elkuri", "", "ELK logstash Uri")
+	var elkUser = flag.String("elkuser", "", "ELK user name")
+	var elkPasswd = flag.String("elkpasswd", "", "ELK password")
 	flag.Parse()
-
 	client := client.Client{}
 	client.Init()
 
+	logSenders := make([]LogSender, 0)
+
+	trainerLogSender := new(logreceiver.TrainerLogSender)
+	trainerLogSender.Init((*trainerUri), (*hostId))
+	logSenders = append(logSenders, trainerLogSender)
+
+	if len((*elkUri)) > 0 && len((*elkUser)) > 0 && len((*elkPasswd)) > 0 {
+		elkLogSender := new(logreceiver.ElkLogSender)
+		elkLogSender.Init((*elkUri), (*hostId), (*elkUser), (*elkPasswd))
+		logSenders = append(logSenders, elkLogSender)
+	}
+
 	logsTicker := time.NewTicker(time.Duration(10 * time.Second))
-	go func () {
+	go func() {
 		for {
-			<- logsTicker.C
-			SendLogs((*trainerUri), (*hostId), &client)
+			<-logsTicker.C
+			SendLogs(logSenders, &client)
 		}
 	}()
 	trainerTicker := time.NewTicker(time.Duration((*checkInInterval)) * time.Second)
-	func () {
+	func() {
 		for {
-			<- trainerTicker.C
+			<-trainerTicker.C
 			CallTrainer((*trainerUri), (*hostId), &client)
 		}
 	}()
@@ -69,9 +87,9 @@ func CallTrainer(trainerUri string, hostId string, client *client.Client) {
 	}
 
 	dataPackage := model.HostCheckinDataPackage{
-		State: state,
+		State:          state,
 		ChangesApplied: client.GetChangeLog(),
-		HostMetrics: hostMetrics,
+		HostMetrics:    hostMetrics,
 	}
 
 	b := new(bytes.Buffer)
@@ -81,7 +99,7 @@ func CallTrainer(trainerUri string, hostId string, client *client.Client) {
 		return
 	}
 
-	res, err := http.Post(trainerUri + "/checkin?host=" + hostId, "application/json; charset=utf-8", b)
+	res, err := http.Post(trainerUri+"/checkin?host="+hostId, "application/json; charset=utf-8", b)
 	if err != nil {
 		MainLogger.Errorf("Could not send data to trainer: %+v", err)
 	} else {
@@ -105,19 +123,9 @@ func CallTrainer(trainerUri string, hostId string, client *client.Client) {
 	}
 }
 
-func SendLogs(trainerUri string, hostId string, client *client.Client) {
+func SendLogs(logSenders []LogSender, client *client.Client) {
 	logs := client.GetAppLogs()
-	b := new(bytes.Buffer)
-	jsonErr := json.NewEncoder(b).Encode(logs)
-	if jsonErr != nil {
-		MainLogger.Errorf("Could not encode Logs: %+v.", jsonErr)
-		return
-	}
-
-	res, err := http.Post(trainerUri + "/log/apps?host=" + hostId, "application/json; charset=utf-8", b)
-	if err != nil {
-		MainLogger.Errorf("Could not send logs to trainer: %+v", err)
-	} else {
-		defer res.Body.Close()
+	for _, logSender := range logSenders {
+		logSender.PushLogs(logs)
 	}
 }
