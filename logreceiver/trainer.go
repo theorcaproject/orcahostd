@@ -20,7 +20,7 @@ func (logSender *TrainerLogSender) Init(uri string, hostId string) {
 	logSender.hostId = hostId
 }
 
-func (logSender *TrainerLogSender) PushLogs(logs map[string]client.Logs) {
+func (logSender *TrainerLogSender) Send(logs map[string]client.Logs) {
 	b := new(bytes.Buffer)
 	jsonErr := json.NewEncoder(b).Encode(logs)
 	if jsonErr != nil {

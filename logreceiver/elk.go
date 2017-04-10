@@ -44,7 +44,7 @@ func (logSender *ElkLogSender) postLogs(app string, message string, logLevel str
 	}
 }
 
-func (logSender *ElkLogSender) PushLogs(logs map[string]client.Logs) {
+func (logSender *ElkLogSender) Send(logs map[string]client.Logs) {
 	for app, appLogs := range logs {
 		if len(appLogs.StdErr) > 0 {
 			entries := strings.Split(appLogs.StdErr, "\n")

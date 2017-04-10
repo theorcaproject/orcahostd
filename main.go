@@ -34,7 +34,7 @@ import (
 var MainLogger = Logger.LoggerWithField(Logger.Logger, "module", "main")
 
 type LogSender interface {
-	PushLogs(logs map[string]client.Logs)
+	Send(logs map[string]client.Logs)
 }
 
 func main() {
@@ -64,7 +64,10 @@ func main() {
 	go func() {
 		for {
 			<-logsTicker.C
-			SendLogs(logSenders, &client)
+			logs := client.GetAppLogs()
+			for _, logSender := range logSenders {
+				logSender.Send(logs)
+			}
 		}
 	}()
 	trainerTicker := time.NewTicker(time.Duration((*checkInInterval)) * time.Second)
@@ -120,12 +123,5 @@ func CallTrainer(trainerUri string, hostId string, client *client.Client) {
 				}
 			}
 		}
-	}
-}
-
-func SendLogs(logSenders []LogSender, client *client.Client) {
-	logs := client.GetAppLogs()
-	for _, logSender := range logSenders {
-		logSender.PushLogs(logs)
 	}
 }
