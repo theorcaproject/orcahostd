@@ -33,10 +33,6 @@ import (
 
 var MainLogger = Logger.LoggerWithField(Logger.Logger, "module", "main")
 
-type LogSender interface {
-	Send(logs map[string]client.Logs)
-}
-
 func main() {
 	var hostId = flag.String("hostid", "host1", "Host Identifier")
 	var checkInInterval = flag.Int("interval", 60, "Check in interval")
@@ -48,7 +44,7 @@ func main() {
 	client := client.Client{}
 	client.Init()
 
-	logSenders := make([]LogSender, 0)
+	logSenders := make([]logreceiver.LogSender, 0)
 
 	trainerLogSender := new(logreceiver.TrainerLogSender)
 	trainerLogSender.Init((*trainerUri), (*hostId))
