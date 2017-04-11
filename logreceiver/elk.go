@@ -35,7 +35,7 @@ func (logSender *ElkLogSender) postLogs(app string, message string, logLevel str
 	}
 	req, _ := http.NewRequest("PUT", logSender.uri, b)
 	req.Header.Set("Content-Type", "application/json")
-	// req.SetBasicAuth(logSender.user, logSender.passwd)
+	req.SetBasicAuth(logSender.user, logSender.passwd)
 	res, err := client.Do(req)
 	if err != nil {
 		ElkLogReceiverLogger.Errorf("Could not send logs to ELK: %+v", err)
