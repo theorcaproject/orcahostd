@@ -2,7 +2,10 @@ package logreceiver
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"orcahostd/client"
 	Logger "orcahostd/logs"
@@ -12,21 +15,29 @@ import (
 var ElkLogReceiverLogger = Logger.LoggerWithField(Logger.Logger, "module", "elklogreceiver")
 
 type ElkLogSender struct {
-	uri    string
-	hostId string
-	user   string
-	passwd string
+	uri      string
+	hostId   string
+	certPool *x509.CertPool
 }
 
-func (logSender *ElkLogSender) Init(uri string, hostId string, user string, passwd string) {
+func (logSender *ElkLogSender) Init(uri string, hostId string, sslCrtPath string) {
 	logSender.uri = uri
 	logSender.hostId = hostId
-	logSender.user = user
-	logSender.passwd = passwd
+	logSender.certPool = x509.NewCertPool()
+	sslCert, err := ioutil.ReadFile(sslCrtPath)
+	if err != nil {
+		ElkLogReceiverLogger.Error("Could not read ELK cert", err)
+	} else {
+		logSender.certPool.AppendCertsFromPEM(sslCert)
+	}
 }
 
 func (logSender *ElkLogSender) postLogs(app string, message string, logLevel string) {
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{RootCAs: logSender.certPool, InsecureSkipVerify: false},
+		},
+	}
 	b := new(bytes.Buffer)
 	jsonErr := json.NewEncoder(b).Encode(map[string]interface{}{"app": app, "message": message, "logLevel": logLevel})
 	if jsonErr != nil {
@@ -35,7 +46,7 @@ func (logSender *ElkLogSender) postLogs(app string, message string, logLevel str
 	}
 	req, _ := http.NewRequest("PUT", logSender.uri, b)
 	req.Header.Set("Content-Type", "application/json")
-	req.SetBasicAuth(logSender.user, logSender.passwd)
+
 	res, err := client.Do(req)
 	if err != nil {
 		ElkLogReceiverLogger.Errorf("Could not send logs to ELK: %+v", err)
