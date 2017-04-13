@@ -39,6 +39,8 @@ func main() {
 	var trainerUri = flag.String("traineruri", "http://localhost:5001", "Trainer Uri")
 	var elkUri = flag.String("elkuri", "", "ELK logstash Uri")
 	var elkSslCrt = flag.String("elkSslCrt", "", "ELK ssl crt")
+	var elkUser = flag.String("elkuser", "", "ELK user name")
+	var elkPasswd = flag.String("elkpasswd", "", "ELK password")
 	flag.Parse()
 	client := client.Client{}
 	client.Init()
@@ -49,9 +51,9 @@ func main() {
 	trainerLogSender.Init((*trainerUri), (*hostId))
 	logSenders = append(logSenders, trainerLogSender)
 
-	if len((*elkUri)) > 0 && len((*elkSslCrt)) > 0 {
+	if len((*elkUri)) > 0 && len((*elkSslCrt)) > 0 && len((*elkUser)) > 0 && len((*elkPasswd)) > 0 {
 		elkLogSender := new(logreceiver.ElkLogSender)
-		elkLogSender.Init((*elkUri), (*hostId), (*elkSslCrt))
+		elkLogSender.Init((*elkUri), (*hostId), (*elkSslCrt), (*elkUser), (*elkPasswd))
 		logSenders = append(logSenders, elkLogSender)
 	}
 

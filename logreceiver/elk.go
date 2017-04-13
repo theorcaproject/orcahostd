@@ -18,11 +18,15 @@ type ElkLogSender struct {
 	uri      string
 	hostId   string
 	certPool *x509.CertPool
+	user     string
+	password string
 }
 
-func (logSender *ElkLogSender) Init(uri string, hostId string, sslCrtPath string) {
+func (logSender *ElkLogSender) Init(uri string, hostId string, sslCrtPath string, user string, password string) {
 	logSender.uri = uri
 	logSender.hostId = hostId
+	logSender.user = user
+	logSender.password = password
 	logSender.certPool = x509.NewCertPool()
 	sslCert, err := ioutil.ReadFile(sslCrtPath)
 	if err != nil {
@@ -35,7 +39,7 @@ func (logSender *ElkLogSender) Init(uri string, hostId string, sslCrtPath string
 func (logSender *ElkLogSender) postLogs(app string, message string, logLevel string) {
 	client := &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{RootCAs: logSender.certPool, InsecureSkipVerify: false},
+			TLSClientConfig: &tls.Config{RootCAs: logSender.certPool, InsecureSkipVerify: true},
 		},
 	}
 	b := new(bytes.Buffer)
@@ -46,6 +50,7 @@ func (logSender *ElkLogSender) postLogs(app string, message string, logLevel str
 	}
 	req, _ := http.NewRequest("PUT", logSender.uri, b)
 	req.Header.Set("Content-Type", "application/json")
+	req.SetBasicAuth(logSender.user, logSender.password)
 
 	res, err := client.Do(req)
 	if err != nil {

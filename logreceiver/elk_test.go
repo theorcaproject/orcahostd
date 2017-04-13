@@ -85,7 +85,7 @@ func TestSendStdOut(t *testing.T) {
 	defer tearDown(dir)
 
 	sender := new(logreceiver.ElkLogSender)
-	sender.Init(srv.URL, "hostId", certPath)
+	sender.Init(srv.URL, "hostId", certPath, "user", "passwd")
 	logs := make(map[string]client.Logs)
 	logs["my_app"] = client.Logs{StdOut: "stdout log message", StdErr: ""}
 	sender.Send(logs)
@@ -120,7 +120,7 @@ func TestSendStdErr(t *testing.T) {
 	defer tearDown(dir)
 
 	sender := new(logreceiver.ElkLogSender)
-	sender.Init(srv.URL, "hostId", certPath)
+	sender.Init(srv.URL, "hostId", certPath, "user", "passwd")
 	logs := make(map[string]client.Logs)
 	logs["my_app"] = client.Logs{StdOut: "", StdErr: "stderr log message"}
 	sender.Send(logs)
