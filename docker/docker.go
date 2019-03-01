@@ -53,7 +53,8 @@ func (c *DockerContainerEngine) Init() {
 	c.logs = make(map[string]*LogItem)
 
 	var err error
-	c.dockerCli, err = DockerClient.NewClient("unix:///var/run/docker.sock")
+	var dockerUnixSocket = os.Getenv("DOCKER_SOCKET")
+	c.dockerCli, err = DockerClient.NewClient(dockerUnixSocket)
 	if err != nil {
 		DockerLogger.Fatalf("Docker client could not be instantiated: %v", err)
 	}
