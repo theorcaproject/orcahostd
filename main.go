@@ -45,15 +45,15 @@ func main() {
 	logsTicker := time.NewTicker(time.Duration(10 * time.Second))
 	go func() {
 		for {
-			<-logsTicker.C
 			SendLogs((trainerUri), (hostId), &client)
+			<-logsTicker.C
 		}
 	}()
 	trainerTicker := time.NewTicker(time.Duration((checkInInterval)) * time.Second)
 	func() {
 		for {
-			<-trainerTicker.C
 			CallTrainer((trainerUri), (hostId), &client)
+			<-trainerTicker.C
 		}
 	}()
 }
