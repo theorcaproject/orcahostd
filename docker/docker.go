@@ -113,9 +113,10 @@ func (c *DockerContainerEngine) RunApp(appId string, name string, appConf model.
 	}
 
 	/* Handle Files */
-	os.Mkdir("/tmp/" + appId, 600)
+	os.Mkdir("/tmp/orca", 600)
+	os.Mkdir("/tmp/orca/" + appId, 600)
 	for _, file := range appConf.Files {
-		fp, err := os.Create("/tmp/" + appId + file.HostPath)
+		fp, err := os.Create("/tmp/orca/" + appId + file.HostPath)
 		if err == nil {
 			fp.WriteString(file.Base64FileContents)
 			fp.Close()
@@ -123,7 +124,7 @@ func (c *DockerContainerEngine) RunApp(appId string, name string, appConf model.
 	}
 
 	mounts := make([]string, 1)
-	mounts[0] = "/tmp/" + appId + ":/orcatmp"
+	mounts[0] = "/tmp/orca/" + appId + ":/orcatmp"
 
 	hostConfig := DockerClient.HostConfig{PortBindings: bindings, PublishAllPorts:true, Binds:mounts}
 	config := DockerClient.Config{AttachStdout: true, AttachStdin: true, Image: fmt.Sprintf("%s:%s", appConf.DockerConfig.Repository, appConf.DockerConfig.Tag), ExposedPorts:ports, Env:env,}
