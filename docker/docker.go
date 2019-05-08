@@ -16,27 +16,26 @@ You should have received a copy of the GNU General Public License
 along with Orca.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 package docker
 
 import (
-	Logger "orcahostd/logs"
-	DockerClient "github.com/fsouza/go-dockerclient"
 	"bytes"
+	"errors"
 	"fmt"
+	Logger "orcahostd/logs"
 	"orcahostd/model"
 	"os"
-	"errors"
-	"github.com/shirou/gopsutil/mem"
+	"time"
+
+	DockerClient "github.com/fsouza/go-dockerclient"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
-	"time"
+	"github.com/shirou/gopsutil/mem"
 )
-
 
 var DockerLogger = Logger.LoggerWithField(Logger.Logger, "module", "docker")
 
-type LogItem struct{
+type LogItem struct {
 	StdOut *bytes.Buffer
 	StdErr *bytes.Buffer
 }
@@ -45,7 +44,7 @@ type DockerContainerEngine struct {
 	dockerCli *DockerClient.Client
 
 	metrics map[string]*DockerMetrics
-	logs map[string]*LogItem
+	logs    map[string]*LogItem
 }
 
 func (c *DockerContainerEngine) Init() {
@@ -76,14 +75,14 @@ func (c *DockerContainerEngine) InstallApp(name string, config model.VersionConf
 	DockerLogger.Infof("Installing docker app %s", name)
 	var buf bytes.Buffer
 	authOpt := DockerClient.AuthConfiguration{
-		Username: config.DockerConfig.Username,
-		Password: config.DockerConfig.Password,
-		Email: config.DockerConfig.Email,
+		Username:      config.DockerConfig.Username,
+		Password:      config.DockerConfig.Password,
+		Email:         config.DockerConfig.Email,
 		ServerAddress: config.DockerConfig.Server,
 	}
 	imageOpt := DockerClient.PullImageOptions{
-		Repository: config.DockerConfig.Repository,
-		Tag: config.DockerConfig.Tag,
+		Repository:   config.DockerConfig.Repository,
+		Tag:          config.DockerConfig.Tag,
 		OutputStream: &buf,
 	}
 	err := c.dockerCli.PullImage(imageOpt, authOpt)
@@ -96,7 +95,6 @@ func (c *DockerContainerEngine) InstallApp(name string, config model.VersionConf
 	return true
 }
 
-
 func (c *DockerContainerEngine) RunApp(appId string, name string, appConf model.VersionConfig) bool {
 	bindings := make(map[DockerClient.Port][]DockerClient.PortBinding)
 	ports := make(map[DockerClient.Port]struct{})
@@ -107,12 +105,12 @@ func (c *DockerContainerEngine) RunApp(appId string, name string, appConf model.
 	DockerLogger.Warnf("Bindinds are %+v", bindings)
 
 	env := DockerClient.Env{}
-	for _, item := range appConf.EnvironmentVariables{
+	for _, item := range appConf.EnvironmentVariables {
 		env.Set(item.Key, item.Value)
 	}
 
 	/* Handle Files */
-	os.Mkdir("/tmp/" + appId, 600)
+	os.Mkdir("/tmp/"+appId, 600)
 	for _, file := range appConf.Files {
 		fp, err := os.Create("/tmp/" + appId + file.HostPath)
 		if err == nil {
@@ -124,10 +122,15 @@ func (c *DockerContainerEngine) RunApp(appId string, name string, appConf model.
 	mounts := make([]string, 1)
 	mounts[0] = "/tmp/" + appId + ":/orcatmp"
 
-	hostConfig := DockerClient.HostConfig{PortBindings: bindings, PublishAllPorts:true, Binds:mounts}
-	config := DockerClient.Config{AttachStdout: true, AttachStdin: true, Image: fmt.Sprintf("%s:%s", appConf.DockerConfig.Repository, appConf.DockerConfig.Tag), ExposedPorts:ports, Env:env,}
-	opts := DockerClient.CreateContainerOptions{Name: string(appId), Config: &config, HostConfig:&hostConfig}
-	container, containerErr :=c.dockerCli.CreateContainer(opts)
+	logConfigOptions := make(map[string]string)
+	logConfigOptions["max-size"] = "10m"
+	logConfigOptions["max-file"] = "3"
+	logConfig := DockerClient.LogConfig{Type: "json-file", Config: logConfigOptions}
+
+	hostConfig := DockerClient.HostConfig{PortBindings: bindings, PublishAllPorts: true, Binds: mounts, LogConfig: logConfig}
+	config := DockerClient.Config{AttachStdout: true, AttachStdin: true, Image: fmt.Sprintf("%s:%s", appConf.DockerConfig.Repository, appConf.DockerConfig.Tag), ExposedPorts: ports, Env: env}
+	opts := DockerClient.CreateContainerOptions{Name: string(appId), Config: &config, HostConfig: &hostConfig}
+	container, containerErr := c.dockerCli.CreateContainer(opts)
 	if containerErr != nil {
 		DockerLogger.Errorf("Running docker app %s with error %s", appId, containerErr)
 		return false
@@ -141,7 +144,6 @@ func (c *DockerContainerEngine) RunApp(appId string, name string, appConf model.
 	DockerLogger.Infof("Running docker app %s - %s successful", appId)
 	return true
 }
-
 
 func (c *DockerContainerEngine) QueryApp(appId string) bool {
 	DockerLogger.Debugf("Query docker app %s", appId)
@@ -176,15 +178,14 @@ func (c *DockerContainerEngine) StopApp(appId string) bool {
 }
 
 type DockerMetrics struct {
-	errC chan error
+	errC   chan error
 	statsC chan *DockerClient.Stats
-	done chan bool
+	done   chan bool
 }
-
 
 func (eng *DockerContainerEngine) HostMetrics() model.Metric {
 	m, mErr := mem.VirtualMemory()
-	c, cErr := cpu.Percent(time.Second * 1, false)
+	c, cErr := cpu.Percent(time.Second*1, false)
 	d, dErr := disk.Usage("/")
 
 	model := model.Metric{}
@@ -206,9 +207,9 @@ func (c *DockerContainerEngine) AppMetrics(appId string) (model.Metric, error) {
 
 	if _, ok := c.metrics[appId]; !ok {
 		metricsItem := &DockerMetrics{
-			done: make (chan bool),
-			errC: make (chan error),
-			statsC: make (chan *DockerClient.Stats),
+			done:   make(chan bool),
+			errC:   make(chan error),
+			statsC: make(chan *DockerClient.Stats),
 		}
 		c.metrics[appId] = metricsItem
 
@@ -266,8 +267,8 @@ func parseDockerStats(stat0 *DockerClient.Stats, stat1 *DockerClient.Stats) (mod
 	}
 
 	var (
-		cpuPercent = uint64(0)
-		cpuDelta = float64(stat1.CPUStats.CPUUsage.TotalUsage) - float64(stat0.CPUStats.CPUUsage.TotalUsage)
+		cpuPercent  = uint64(0)
+		cpuDelta    = float64(stat1.CPUStats.CPUUsage.TotalUsage) - float64(stat0.CPUStats.CPUUsage.TotalUsage)
 		systemDelta = float64(stat1.CPUStats.SystemCPUUsage) - float64(stat0.CPUStats.SystemCPUUsage)
 	)
 
